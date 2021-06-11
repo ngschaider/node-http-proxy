@@ -101,17 +101,15 @@ describe('#createProxyServer.web() using own http server', function () {
   it('should detect a proxyReq event and modify headers', function (done) {
     var proxy = httpProxy.createProxyServer({
       target: 'http://127.0.0.1:8080',
+      onProxyReq: (proxyReq, req, res, options) => {
+        console.log("setting header");
+        proxyReq.setHeader("X-Special-Proxy-Header", "foobar");
+      }
     });
 
-    proxy.on('proxyReq', function(proxyReq, req, res, options) {
-      proxyReq.setHeader('X-Special-Proxy-Header', 'foobar');
-    });
-
-    function requestHandler(req, res) {
+    var proxyServer = http.createServer((req, res) => {
       proxy.web(req, res);
-    }
-
-    var proxyServer = http.createServer(requestHandler);
+    });
 
     var source = http.createServer(function(req, res) {
       source.close();
@@ -336,22 +334,24 @@ describe('#createProxyServer.web() using own http server', function () {
 
   it('should proxy the request and provide a proxyRes event with the request and response parameters', function(done) {
     var proxy = httpProxy.createProxyServer({
-      target: 'http://127.0.0.1:8080'
-    });
-
-    function requestHandler(req, res) {
-      proxy.once('proxyRes', function (proxyRes, pReq, pRes) {
+      target: 'http://127.0.0.1:8080',
+      onProxyRes: (proxyRes, req, res) => {
         source.close();
         proxyServer.close();
-        expect(pReq).to.be.equal(req);
-        expect(pRes).to.be.equal(res);
+        expect(req).to.be.equal(originalRequest);
+        expect(res).to.be.equal(originalResponse);
         done();
-      });
+      }
+    });
 
+    let originalRequest = null;
+    let originalResponse = null;
+
+    var proxyServer = http.createServer((req, res) => {
+      originalRequest = req;
+      originalResponse = res;
       proxy.web(req, res);
-    }
-
-    var proxyServer = http.createServer(requestHandler);
+    });
 
     var source = http.createServer(function(req, res) {
       res.end('Response');
@@ -365,21 +365,18 @@ describe('#createProxyServer.web() using own http server', function () {
   it('should proxy the request and provide and respond to manual user response when using modifyResponse', function(done) {
     var proxy = httpProxy.createProxyServer({
       target: 'http://127.0.0.1:8080',
-      selfHandleResponse: true
-    });
-
-    function requestHandler(req, res) {
-      proxy.once('proxyRes', function (proxyRes, pReq, pRes) {
+      selfHandleResponse: true,
+      onProxyRes: (proxyRes, req, res) => {
         proxyRes.pipe(concat(function (body) {
           expect(body.toString('utf8')).eql('Response');
-          pRes.end(Buffer.from('my-custom-response'));
+          res.end(Buffer.from('my-custom-response'));
         }))
-      });
+      }
+    });
 
+    var proxyServer = http.createServer((req, res) => {
       proxy.web(req, res);
-    }
-
-    var proxyServer = http.createServer(requestHandler);
+    });
 
     var source = http.createServer(function(req, res) {
       res.end('Response');
@@ -406,11 +403,9 @@ describe('#createProxyServer.web() using own http server', function () {
       changeOrigin: true
     });
 
-    function requestHandler(req, res) {
+    var proxyServer = http.createServer((req, res) => {
       proxy.web(req, res);
-    }
-
-    var proxyServer = http.createServer(requestHandler);
+    });
 
     var source = http.createServer(function(req, res) {
       source.close();

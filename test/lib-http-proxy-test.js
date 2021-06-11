@@ -20,17 +20,6 @@ Object.defineProperty(gen, 'port', {
 
 describe('lib/http-proxy.js', function() {
   describe('#createProxyServer', function() {
-    it.skip('should throw without options', function() {
-      var error;
-      try {
-        httpProxy.createProxyServer();
-      } catch(e) {
-        error = e;
-      }
-
-      expect(error).to.be.an(Error);
-    })
-
     it('should return an object otherwise', function() {
       var obj = httpProxy.createProxyServer({
         target: 'http://www.google.com:80'
@@ -460,7 +449,18 @@ describe('lib/http-proxy.js', function() {
       var ports = { source: gen.port, proxy: gen.port };
       var proxy = httpProxy.createProxyServer({
         target: 'ws://127.0.0.1:' + ports.source,
-        ws: true
+        ws: true,
+        onOpen: () => {
+          count += 1;
+        },
+        onClose: () => {
+          proxyServer.close();
+          server.close();
+          destiny.close();
+          if(count === 1) { 
+            done(); 
+          }
+        }
       });
       var proxyServer = proxy.listen(ports.proxy);
       var server = http.createServer();
@@ -472,23 +472,11 @@ describe('lib/http-proxy.js', function() {
           client.disconnect();
         });
       }
-      var count = 0;
 
-      proxyServer.on('open', function() {
-        count += 1;
-
-      });
-
-      proxyServer.on('close', function() {
-        proxyServer.close();
-        server.close();
-        destiny.close();
-        if (count == 1) { done(); }
-      });
+      let count = 0;
 
       server.listen(ports.source);
       server.on('listening', startSocketIo);
-
     });
 
     it('should pass all set-cookie headers to client', function (done) {
@@ -537,11 +525,10 @@ describe('lib/http-proxy.js', function() {
 
       proxy = httpProxy.createProxyServer({
         target: 'ws://127.0.0.1:' + ports.source,
-        ws: true
-      });
-
-      proxy.on('proxyReqWs', function(proxyReq, req, socket, options, head) {
-        proxyReq.setHeader('X-Special-Proxy-Header', 'foobar');
+        ws: true,
+        onProxyReqWs: (proxyReq, req, socket, options, head) => {
+          proxyReq.setHeader("X-Special-Proxy-Header", "foobar");
+        }
       });
 
       proxyServer = proxy.listen(ports.proxy);
