@@ -8,7 +8,7 @@
   "description": "HTTP proxying for the masses",
   "author": "Charlie Robbins <charlie.robbins@gmail.com>",
   "maintainers": [
-    "jcrugzz <jcrugzz@gmail.com>"
+    "Niklas Gschaider <niklas.gschaider@gschaider-systems.at>"
   ],
   "main": "index.js",
   "dependencies": {
@@ -18,7 +18,6 @@
   },
   "devDependencies": {
     "async": "^3.0.0",
-    "auto-changelog": "^1.15.0",
     "concat-stream": "^2.0.0",
     "expect.js": "~0.3.1",
     "mocha": "^3.5.3",
@@ -31,8 +30,7 @@
   },
   "scripts": {
     "mocha": "mocha test/*-test.js",
-    "test": "nyc --reporter=text --reporter=lcov npm run mocha",
-    "version": "auto-changelog -p && git add CHANGELOG.md"
+    "test": "nyc --reporter=text --reporter=lcov npm run mocha"
   },
   "engines": {
     "node": ">=8.0.0"
