@@ -2,6 +2,10 @@
 websockets. It is suitable for implementing components such as reverse
 proxies and load balancers.
 
+# Changes of this fork
+
+For all the changes made to this fork please Read the README.md. Forked versions start at v2.0.0.
+
 ### Table of Contents
   * [Installation](#installation)
   * [Upgrading from 0.8.x ?](#upgrading-from-08x-)
