@@ -4,7 +4,7 @@ proxies and load balancers.
 
 # Changes of this fork
 
-For all the changes made to this fork please Read the README.md. Forked versions start at v2.0.0.
+For all the changes made to this fork please Read the [CHANGELOG.md](CHANGELOG.md). Forked versions start at v2.0.0.
 
 ### Table of Contents
   * [Installation](#installation)
