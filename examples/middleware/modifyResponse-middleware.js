@@ -38,7 +38,7 @@ app.use(function (req, res, next) {
   var _write = res.write;
 
   res.write = function (data) {
-    _write.call(res, data.toString().replace("Ruby", "http-party"));
+    _write.call(res, data.toString().replace("Ruby", "ngschaider/node-http-proxy"));
   }
   next();
 });

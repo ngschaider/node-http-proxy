@@ -9,6 +9,7 @@ For all the changes made to this fork please Read the README.md. Forked versions
 ### Table of Contents
   * [Installation](#installation)
   * [Upgrading from 0.8.x ?](#upgrading-from-08x-)
+  * [Upgrading from 1.18.x ?](#upgrading-from-118x-)
   * [Core Concept](#core-concept)
   * [Use Cases](#use-cases)
     * [Setup a basic stand-alone proxy server](#setup-a-basic-stand-alone-proxy-server)
@@ -36,7 +37,11 @@ For all the changes made to this fork please Read the README.md. Forked versions
 
 ### Upgrading from 0.8.x ?
 
-Click [here](UPGRADING.md)
+Click [here](UPGRADING_v0_to_v2.md)
+
+### Upgrading from 1.18.x ?
+
+Click [here](UPGRADING_v1_to_v2.md)
 
 **[Back to top](#table-of-contents)**
 
@@ -155,18 +160,19 @@ var http = require('http'),
 //
 // Create a proxy server with custom application logic
 //
-var proxy = httpProxy.createProxyServer({});
 
-// To modify the proxy connection before data is sent, you can listen
-// for the 'proxyReq' event. When the event is fired, you will receive
+// To modify the proxy connection before data is sent, you can add a function
+// via the 'onProxyReq' option. When the function is called, you will receive
 // the following arguments:
 // (http.ClientRequest proxyReq, http.IncomingMessage req,
 //  http.ServerResponse res, Object options). This mechanism is useful when
 // you need to modify the proxy request before the proxy connection
 // is made to the target.
 //
-proxy.on('proxyReq', function(proxyReq, req, res, options) {
-  proxyReq.setHeader('X-Special-Proxy-Header', 'foobar');
+var proxy = httpProxy.createProxyServer({
+  onProxyReq: function(proxyReq, req, res, options) {
+    proxyReq.setHeader('X-Special-Proxy-Header', 'foobar');
+  }
 });
 
 var server = http.createServer(function(req, res) {
@@ -402,6 +408,13 @@ If you are using the `proxyServer.listen` method, the following options are also
 
  *  **ssl**: object to be passed to https.createServer()
  *  **ws**: true/false, if you want to proxy websockets
+ *  **onProxyReq**: function to be called before the data is sent. It gives you a chance to alter the proxyReq request object. Applies to "web" connections
+ *  **onProxyReqWs**: function to be called before the data is sent. It gives you a chance to alter the proxyReq request object. Applies to "websocket" connections
+ *  **onProxyRes**: function to be called when the request to the target got a response.
+ *  **onOpen**: function to be called once the proxy websocket was created and piped into the target websocket.
+ *  **onClose**: function to be called once the proxy websocket was closed.
+ *  **onStart**
+ *  **onEnd**
 
 
 **[Back to top](#table-of-contents)**
@@ -409,12 +422,6 @@ If you are using the `proxyServer.listen` method, the following options are also
 ### Listening for proxy events
 
 * `error`: The error event is emitted if the request to the target fail. **We do not do any error handling of messages passed between client and proxy, and messages passed between proxy and target, so it is recommended that you listen on errors and handle them.**
-* `proxyReq`: This event is emitted before the data is sent. It gives you a chance to alter the proxyReq request object. Applies to "web" connections
-* `proxyReqWs`: This event is emitted before the data is sent. It gives you a chance to alter the proxyReq request object. Applies to "websocket" connections
-* `proxyRes`: This event is emitted if the request to the target got a response.
-* `open`: This event is emitted once the proxy websocket was created and piped into the target websocket.
-* `close`: This event is emitted once the proxy websocket was closed.
-* (DEPRECATED) `proxySocket`: Deprecated in favor of `open`.
 
 ```js
 var httpProxy = require('http-proxy');
@@ -439,26 +446,30 @@ proxy.on('error', function (err, req, res) {
 });
 
 //
-// Listen for the `proxyRes` event on `proxy`.
+// Proxy a request while logging the response from the target.
 //
-proxy.on('proxyRes', function (proxyRes, req, res) {
-  console.log('RAW Response from the target', JSON.stringify(proxyRes.headers, true, 2));
+proxy.web(req, res, { 
+  onProxyRes: function(proxyRes, req, res) {
+    console.log('RAW Response from the target', JSON.stringify(proxyRes.headers, true, 2));
+  }
 });
 
 //
-// Listen for the `open` event on `proxy`.
+// Logging socket data.
 //
-proxy.on('open', function (proxySocket) {
-  // listen for messages coming FROM the target here
-  proxySocket.on('data', hybiParseAndLogMessage);
+proxy.web(req, res, { 
+  onOpen: function(proxySocket) {
+    return hybiParseAndLogMessage(proxySocket);
+  }
 });
 
 //
-// Listen for the `close` event on `proxy`.
+// Logging when a socket closes.
 //
-proxy.on('close', function (res, socket, head) {
-  // view disconnected websocket connections
-  console.log('Client disconnected');
+proxy.web(req, res, { 
+  onClose: function(proxySocket) {
+    console.log('Client disconnected');
+  }
 });
 ```
 
@@ -496,9 +507,8 @@ data.
 
     var option = {
       target: target,
-      selfHandleResponse : true
-    };
-    proxy.on('proxyRes', function (proxyRes, req, res) {
+      selfHandleResponse : true,
+      onProxyRes: function (proxyRes, req, res) {
         var body = [];
         proxyRes.on('data', function (chunk) {
             body.push(chunk);
@@ -508,7 +518,8 @@ data.
             console.log("res from proxied server:", body);
             res.end("my response to cli");
         });
-    });
+      }
+    };
     proxy.web(req, res, option);
 
 
@@ -532,7 +543,7 @@ Logo created by [Diego Pasquali](http://dribbble.com/diegopq)
 
 ### Contributing and Issues
 
-* Read carefully our [Code Of Conduct](https://github.com/http-party/node-http-proxy/blob/master/CODE_OF_CONDUCT.md)
+* Read carefully our [Code Of Conduct](https://github.com/ngschaider/node-http-proxy/blob/master/CODE_OF_CONDUCT.md)
 * Search on Google/Github
 * If you can't find anything, open an issue
 * If you feel comfortable about fixing the issue, fork the repo

@@ -1,15 +1,12 @@
 {
-  "name": "http-proxy",
+  "name": "@ngschaider/http-proxy",
   "version": "1.18.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/http-party/node-http-proxy.git"
+    "url": "https://github.com/ngschaider/node-http-proxy.git"
   },
   "description": "HTTP proxying for the masses",
-  "author": "Charlie Robbins <charlie.robbins@gmail.com>",
-  "maintainers": [
-    "Niklas Gschaider <niklas.gschaider@gschaider-systems.at>"
-  ],
+  "author": "Niklas Gschaider <niklas.gschaider@gschaider-systems.at>",
   "main": "index.js",
   "dependencies": {
     "eventemitter3": "^4.0.0",
